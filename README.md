@@ -23,8 +23,8 @@ expo 58.0.23, expo-router 58.0.30, react-native 0.88.1, react-native-web 0.21.4,
 
 ## Cause
 
-With no `dangerouslySingular`, [`StackRouter`](https://github.com/expo/expo/blob/0e673ace1aa2981e08d48290c98377433c9e9282/packages/expo-router/src/react-navigation/routers/StackRouter.tsx#L581-L590) handles `POP_TO` by popping to the last route with the name `[id]`, whatever its params.
+With no `dangerouslySingular`, [`StackRouter`](https://github.com/expo/expo/blob/0e673ace1aa2981e08d48290c98377433c9e9282/packages/expo-router/src/react-navigation/routers/StackRouter.tsx#L581-L590) handles `POP_TO` by popping to the last route with the name `[id]`, whatever its path params.
 
 ## Fix
 
-Branch [`with-fix`](../../tree/with-fix) (`patches/`): that loop also compares `getSingularId`, so it pops only to a route with the same params, and replaces the current screen when there is none.
+Branch [`with-fix`](../../tree/with-fix) (`patches/`): below the focused route, `POP_TO` pops only to a route with the same path params (`getSingularId`), and the replace does not reuse a preloaded route with other path params.

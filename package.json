@@ -1,5 +1,5 @@
 {
-  "name": "repro-expo-router-dismissto-dynamic-layout",
+  "name": "repro-expo-router-dismissto-params",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
