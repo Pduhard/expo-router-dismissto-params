@@ -1,8 +1,10 @@
-# expo-router `dismissTo` pops to a dynamic route with other params
+# expo-router `dismissTo` pops to a dynamic route with other params and overwrites them
 
-The root Stack holds `projects/[slug]/(project)` for project `a`, then a drop of `a`, then a drop of `b`.
-`router.dismissTo('/projects/b/drops')` should replace the drop of `b` with the drops of `b`, because `/projects/b/drops` is not in the history.
-Instead it pops to the layout of `a` and gives it the params of `b`. The drop of `a` and the drops of `a` are gone from the history.
+One root `Stack` with `index`, `[id]` and `modal`.
+From `/`: `router.push('/1')`, `router.push('/modal')`, `router.dismissTo('/2')`.
+
+`/2` is not in the history, so `dismissTo` should replace `modal` with `/2`, and `router.back()` should go to `/1`.
+Instead it pops to the `/1` screen and overwrites its params with `{ id: '2' }`. `/1` is gone, and `router.back()` goes to `/`.
 
 ## Run
 
@@ -12,22 +14,17 @@ pnpm exec playwright install chromium
 pnpm test     # expo export -p web, then Playwright presses the buttons and reads the address bar
 ```
 
-Expo SDK 58, expo-router 58.0.30, web.
+expo 58.0.23, expo-router 58.0.30, react-native 0.88.1, react-native-web 0.21.4, web:
 
-Steps: open `/projects/a/drops`, open drop 1 of `a`, open drop 2 of `b`, press `router.dismissTo('/projects/b/drops')`, then press `router.back()` twice.
-
-| step | expected | expo-router 58.0.30 | with-fix |
+| call | expected | expo-router 58.0.30 | with-fix |
 |---|---|---|---|
-| `router.dismissTo('/projects/b/drops')` | `/projects/b/drops` | ✓ | ✓ |
-| `router.back()` | `/projects/a/drops/1` | ✗ `/` | ✓ |
-| `router.back()` | `/projects/a/drops` | ✗ (already on `/`) | ✓ |
+| `router.dismissTo('/2')` | `/2` | ✓ | ✓ |
+| `router.back()` | `/1` | ✗ `/` | ✓ |
 
 ## Cause
 
-`dismissTo` resolves to a `POP_TO` for the route name `projects/[slug]/(project)` in the root Stack.
-[`StackRouter`](https://github.com/expo/expo/blob/main/packages/expo-router/src/react-navigation/routers/StackRouter.tsx) handles `POP_TO` by popping to the last route with that name, whatever its params.
-That route is the layout of `a`, so the Stack pops to it and gives it `slug: 'b'`.
+With no `dangerouslySingular`, [`StackRouter`](https://github.com/expo/expo/blob/0e673ace1aa2981e08d48290c98377433c9e9282/packages/expo-router/src/react-navigation/routers/StackRouter.tsx#L581-L590) handles `POP_TO` by popping to the last route with the name `[id]`, whatever its params.
 
 ## Fix
 
-Branch [`with-fix`](../../tree/with-fix) (`patches/`): in `resolveNavigationDestination`, when the last Stack route with the target's name has other params for its dynamic segments, resolve the `POP_TO` to a `REPLACE`, which is what `dismissTo` does when the href is not in the history.
+Branch [`with-fix`](../../tree/with-fix) (`patches/`): that loop also compares `getSingularId`, so it pops only to a route with the same params, and replaces the current screen when there is none.
