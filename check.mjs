@@ -38,6 +38,7 @@ const rows = [
 ].map((row) => ({ ...row, ok: row.actual === row.expected ? "✓" : "✗" }));
 
 console.table(rows);
+if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT });
 await browser.close();
 server.close();
 process.exitCode = rows.every((row) => row.ok === "✓") ? 0 : 1;
