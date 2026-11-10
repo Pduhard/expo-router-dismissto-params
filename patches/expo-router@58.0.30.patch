@@ -1,0 +1,47 @@
+diff --git a/build/react-navigation/routers/StackRouter.js b/build/react-navigation/routers/StackRouter.js
+index 4f96514510227de3ea14a627e67145c6ecb5760a..984b12ae4f9fce034f27461d3ecd978ef6e1c86f 100644
+--- a/build/react-navigation/routers/StackRouter.js
++++ b/build/react-navigation/routers/StackRouter.js
+@@ -28,6 +28,7 @@ _export(exports, {
+         return getStackRoutes;
+     }
+ });
++const _getSingularId = require("../../utils/getSingularId");
+ const _isArrayEqual = require("../core/isArrayEqual");
+ const _BaseRouter = require("./BaseRouter");
+ const _attachRouteState = require("./attachRouteState");
+@@ -394,6 +395,13 @@ function stackRouterExtension({ baseRouter, nextKey, options: { initialRouteName
+                         const id = getId?.({
+                             params: action.payload.params
+                         });
++                        // Expo Router: without an id, a route with other path params is another screen.
++                        const singularId = (0, _getSingularId.getSingularId)(action.payload.name, {
++                            params: action.payload.params
++                        });
++                        const hasSamePathParams = (route)=>(0, _getSingularId.getSingularId)(route.name, {
++                                params: route.params
++                            }) === singularId;
+                         if (id !== undefined) {
+                             index = activeRoutes.findIndex((route)=>route.name === action.payload.name && id === getId?.({
+                                     params: route.params
+@@ -402,7 +410,7 @@ function stackRouterExtension({ baseRouter, nextKey, options: { initialRouteName
+                             index = currentIndex;
+                         } else {
+                             for(let i = currentIndex; i >= 0; i--){
+-                                if (activeRoutes[i].name === action.payload.name) {
++                                if (activeRoutes[i].name === action.payload.name && hasSamePathParams(activeRoutes[i])) {
+                                     index = i;
+                                     break;
+                                 }
+@@ -411,9 +419,9 @@ function stackRouterExtension({ baseRouter, nextKey, options: { initialRouteName
+                         // If the route doesn't exist, remove the current route and add the new one
+                         if (index === -1) {
+                             // Re-use preloaded route if available
+-                            let route = preloadedRoutes.find((route)=>route.name === action.payload.name && id === getId?.({
++                            let route = preloadedRoutes.find((route)=>route.name === action.payload.name && (id === undefined ? hasSamePathParams(route) : id === getId?.({
+                                     params: route.params
+-                                }));
++                                })));
+                             if (!route) {
+                                 route = (0, _createRouteFromAction.createRouteFromAction)({
+                                     action,
